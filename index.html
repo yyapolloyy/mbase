@@ -1,0 +1,169 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="dark"><title>M.BASE BALL</title><style>
+:root{--bg:#0b1630;--cd:#142348;--ink:#f2f5fb;--mut:#9fb0d0;--ac:#f5b63d;--ok:#3ecf8e;--ng:#ff7a7a;--ln:#243764;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+*{box-sizing:inherit}html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"Hiragino Sans",sans-serif;max-width:560px;margin:auto}
+#app{padding:12px 14px}.rb{line-height:2.3}rt{font-size:.5em;color:var(--mut)}
+h1{font-size:20px;margin:0;letter-spacing:.5px}h1 b{color:var(--ac)}h2{font-size:17px;margin:0 0 8px}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.c{background:var(--cd);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}.s{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:10px;text-align:center}
+.s b{display:block;font-size:22px;color:var(--ac)}.s span{font-size:12px;color:var(--mut)}
+button,select,input,textarea{font:inherit;color:var(--ink);background:#0e1b3c;border:1px solid var(--ln);border-radius:10px;padding:10px;width:100%}
+.b{background:var(--ac);color:#1a1200;font-weight:700;border:0;margin-top:6px}.o{text-align:left;margin-top:8px;background:#0e1b3c}
+.o.ok{border-color:var(--ok);background:#0f3a2e}.o.ng{border-color:var(--ng);background:#3a1a22}
+.bar{height:8px;background:#0e1b3c;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.m{color:var(--mut);font-size:13px}.chip{display:inline-block;background:#0e1b3c;border:1px solid var(--ln);border-radius:20px;padding:2px 10px;margin:2px;font-size:13px}.chip.on{border-color:var(--ac);color:var(--ac)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;background:#0a1228;border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav div{display:flex;width:100%;max-width:560px}nav button{border:0;background:none;border-radius:0;padding:8px 2px;font-size:12px;color:var(--mut)}nav button.on{color:var(--ac)}
+.w{display:flex;gap:8px}.w>*{flex:1}label{display:block;margin-top:8px;font-size:14px;color:var(--mut)}.cb{width:auto;display:inline-block;margin-right:4px}
+</style></head><body><div id="app"></div><nav id="nv"><div></div></nav><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const P={mayo:{n:'まよ',g:'m'},leo:{n:'れお',g:'l'}},CATS=['ルール','用語','打撃','守備','走塁','状況判断'];
+// [id,カテゴリ,対象(l=れお/m=まよ),難易度,問題,[正解,誤答...],解説]
+const Q=[
+['l1','ルール','l',1,'アウトが3つになると、どうなる?',['攻守交代','試合終了','もういちどやりなおす'],'アウトが3つになると攻守交代。守っていたチームが、つぎはこうげきするよ。'],
+['l2','守備','l',1,'ゴロがとんできた! ボールの前でどうする?',['体を正面に向けて、低くかまえる','ボールにせなかを向ける','立ったまま目をとじる'],'ポイント: 体をボールの正面に向けて低くかまえると、はじいても体で止められるよ。'],
+['l3','走塁','l',1,'打ったあと、さいしょに走るのはどこ?',['一塁','三塁','本塁'],'打ったら、まず一塁をめざして走ろう。ボールがぬけたら二塁もねらえるよ。'],
+['l4','用語','l',1,'投げたボールがストライクゾーンを通った。これは?',['ストライク','ボール','ファウル'],'ストライクゾーンを通ったボールは、バットをふらなくてもストライクだよ。'],
+['l5','状況判断','l',2,'1アウト、ランナーなし。ショートに強いゴロが来た。どこへ投げる?',['一塁','二塁','本塁'],'ポイント: ランナーがいないときは、バッターをアウトにするために一塁へ投げるよ。'],
+['l6','打撃','l',1,'バットをふるとき、大切なのは?',['ボールをよく見る','目をとじる','バットを投げる'],'ボールをさいごまで見ると、バットにあてやすくなるよ。'],
+['l7','ルール','l',1,'ランナーが本塁をふむと、何点入る?',['1点','3点','0点'],'ランナーが本塁をふむと1点入るよ。'],
+['m1','状況判断','m',2,'無死一塁、同点の中盤。遊撃手の正面に強いゴロ。最善の判断は?',['二塁へ送球して併殺を狙う','一塁へ送球','三塁へ送球','ボールを持って走者を見る'],'判断のポイント: 無死一塁で強い正面のゴロは、二塁でフォースアウト→一塁の併殺が狙える。送球は捕球後すぐ、体勢を崩さずに。'],
+['m2','状況判断','m',3,'1死満塁、1点リードの終盤。三塁手の正面に強いゴロ。最優先は?',['本塁へ送球してフォースアウト','一塁へ送球','二塁へ送球','三塁走者にタッチ'],'判断のポイント: 満塁は全ての塁がフォース状態。一番近い本塁で先にアウトを取り、同点を防ぐのが最優先。'],
+['m3','走塁','m',3,'1死三塁、前進守備で内野ゴロ。三塁走者の判断で適切なのは?',['打球が内野手に捕られたのを確認し、無理なら本塁突入を止める','ゴロなら必ず本塁へ走る','必ず三塁に戻る','打球を見ずに走る'],'判断のポイント: 前進守備は本塁が近く、突入はアウトになりやすい。打球の強さと捕球位置を見て判断する。'],
+['m4','打撃','m',2,'0ボール2ストライクと追い込まれた。基本的な意識は?',['ゾーンを広げ、コンパクトに振って確実にコンタクト','大振りで長打を狙う','見逃し三振を狙う','ストライクだけ待つ'],'判断のポイント: 追い込まれたら三振を避けるため、際どい球にも対応できるよう振りをコンパクトにする。'],
+['m5','ルール','m',2,'インフィールドフライが宣告される条件は?',['無死または一死で、走者一二塁または満塁の内野飛球','二死満塁のみ','走者がいない場面の飛球','外野への飛球'],'ポイント: 一死以下で走者一二塁または満塁、内野手が普通に捕れる飛球が対象。打者はアウトになる。'],
+['m6','守備','m',2,'一塁手。走者一塁で投手が牽制した。基本の動きは?',['塁に足をつけて送球に備え、捕球後すぐ走者にタッチ','塁から離れて待つ','走者に背を向ける','捕ったあと走者を見ない'],'ポイント: 足は塁に、体は投手方向に向けて捕球し、タッチは素早く低く。'],
+['m7','状況判断','m',3,'二塁ベース後方の飛球を遊撃手と二塁手が追う。適切なのは?',['声でコールし、優先権のある選手が捕って他は譲る','お互い無言で追う','両方が捕りに行く','どちらも止まる'],'ポイント: 衝突防止のため声かけが必須。一般に後ろ向きに追う野手より前向きに追う野手が見やすく、外野寄りの野手に優先権がある。'],
+['l8','ルール','l',1,'ストライクが3つになると、バッターはどうなる?',['三振でアウト','ヒットになる','四球になる'],'ストライクが3つで三振。バッターはアウトになるよ。'],
+['l9','ルール','l',1,'ボールが4つになると、バッターはどうなる?',['一塁へすすめる(四球)','アウトになる','三振になる'],'ボールが4つで四球。バッターは一塁へすすめるよ。'],
+['l10','用語','l',1,'「投手」はどんな人?',['ボールを投げる人','バットをふる人','審判の人'],'投手はピッチャー。打者にむけてボールを投げるよ。'],
+['l11','用語','l',1,'「捕手」はどんな人?',['本塁のうしろでボールをとる人','マウンドで投げる人','一塁を守る人'],'捕手はキャッチャー。投手のボールをうけて、守備のサインも出すよ。'],
+['l12','守備','l',1,'フライがとんできた。どうする?',['ボールの下に入って、よく見る','目をそらす','うしろをむいて走る'],'ボールの下に入って見つづけると、しっかりキャッチできるよ。'],
+['l13','守備','l',2,'ゴロをとったあと、投げるまえにすることは?',['投げる相手を見て、足をむける','目をとじて投げる','ボールをかくす'],'ポイント: 投げる相手に足と体をむけると、まっすぐ投げやすいよ。'],
+['l14','走塁','l',1,'打ったあと、一塁を走りぬけるとき、どうする?',['ベースをふんで、そのまま走りぬける','ベースの手前で止まる','ベースにすわる'],'ベースをふんで走りぬけると、はやくセーフになりやすいよ。'],
+['l15','走塁','l',1,'ピッチャーが投げるときに次の塁へ走ることを何という?',['盗塁','三振','四球'],'盗塁。キャッチャーの送球より先に次の塁につけたら成功だよ。'],
+['l16','打撃','l',1,'打つまえの足のかまえは?',['足をひらいて、ひざを少しまげる','足をとじてまっすぐ立つ','かたあしで立つ'],'足をひらいてひざをまげると、体がぐらつかずにふれるよ。'],
+['l17','状況判断','l',2,'2アウト、ランナー二塁。内野ゴロ。どこへ投げる?',['一塁','三塁','本塁'],'ポイント: 2アウトなら、一塁でバッターをアウトにすれば3アウト。攻守交代になるよ。'],
+['l18','ルール','l',1,'打ったボールがファウルラインの外におちた。これは?',['ファウル','フェア','ホームラン'],'ラインの外におちたらファウル。ストライクが1つ入るよ(2ストライクのあとは増えないよ)。'],
+['l19','状況判断','l',2,'1アウト満塁。ゴロをとった。本塁がいちばん近い。どうする?',['本塁でアウトをねらう','一塁にしか投げない','ボールをもって走る'],'ポイント: 満塁は全部の塁でフォースアウトができる。点を防ぐために、近い本塁でアウトにするよ。'],
+['l20','守備','l',1,'内野手が声を出すのはなぜ?',['ぶつからないよう、みんなに知らせるため','かっこいいから','ねむくならないため'],'「オーライ!」などの声で、だれがとるかを知らせて、ぶつからないようにするよ。'],
+['l21','用語','l',1,'「ヒット」とは?',['打って、アウトにならず塁にいけること','三振のこと','ボールが4つのこと'],'ヒットは、打ったボールでアウトにならずに塁に出ることだよ。'],
+['m8','状況判断','m',3,'無死二塁。走者を三塁に進めたい場面で、打者が狙うべき打撃は?',['右方向へ打球を転がして進塁打にする','引っ張って強い飛球を打つ','見逃し三振','バントを空振りする'],'判断のポイント: 右方向のゴロは二塁走者が三塁へ進みやすい。右打ちの進塁打は走者を進める基本技術。'],
+['m9','状況判断','m',2,'2死満塁。三塁手が三塁ベース付近でゴロを捕球した。確実なアウトの取り方は?',['三塁ベースを踏んでフォースアウトにする','一塁へ送球','本塁へ送球','走者を追ってタッチ'],'判断のポイント: 満塁は全塁フォース状態。ベースを踏めば3アウトでチェンジになり、最も確実。'],
+['m10','守備','m',2,'遊撃手の「ゴロの一歩目」で最も大切なのは?',['打球の方向とバウンドを読んで先に動く','捕球してから動き出す','止まって待つ','後ろに下がる'],'ポイント: 打者のスイングと打球音で方向を判断し、先に動いて正面で捕球できる位置に入る。'],
+['m11','守備','m',2,'併殺プレーで最も大切なことは?',['1つ目のアウトを確実に取ってから送球する','焦って1つ目を確実に取らない','最初から一塁だけを見る','送球せず持ったまま走る'],'ポイント: 1つ目のアウトを落とすと併殺どころかセーフになる。確実に取る→素早く持ち替えて送球。'],
+['m12','ルール','m',2,'3アウト目が打者走者の一塁アウトだった場合、その前に三塁走者が本塁を踏んでいた。得点は?',['認められない','認められる','半分認められる','審判が決める'],'ルール: 打者走者が一塁に達する前のアウト(フォースアウト扱い)で3アウトなら、その間の得点は認められない。'],
+['m13','ルール','m',3,'ボークとなる代表的な例は?',['走者がいるとき、投球動作を始めてから途中でやめる','一塁に牽制球を投げる','ボール球を投げる','打者に近い球を投げる'],'ルール: 走者がいるとき、投球動作の途中で止めるなどの反則動作はボーク。走者は1つずつ進塁する。'],
+['m14','用語','m',2,'フォースアウトとは?',['進塁義務のある走者が到達する前に、ボールを持った野手がその塁を踏んでアウトにすること','タッチしてアウトにすること','三振で取るアウト','打者が打つ前に取るアウト'],'ポイント: フォースアウトはタッチ不要。進塁義務がある走者(打者走者や押し出される走者)だけに成立する。'],
+['m15','走塁','m',2,'1死一塁、ヒットエンドランでの一塁走者の基本は?',['投球と同時にスタートする','打球を見てから走る','動かない','盗塁だけ考える'],'判断のポイント: 打者が必ず打つ前提。投球と同時にスタートして、打球で進塁を判断する。'],
+['m16','走塁','m',3,'2死二塁。センター前ヒット。三塁コーチが二塁走者を回す判断で見るのは?',['外野手の位置・打球の強さ・送球までの距離','打者走者の足の速さのみ','審判の合図','観客の反応'],'判断のポイント: 外野手の捕球位置と体勢、送球の距離、走者の速さを総合して判断する。'],
+['m17','打撃','m',2,'3ボール1ストライク。打者の基本的な意識は?',['甘い球を狙い、ストライクを逃さない','必ず見逃す','ボール球を振る','バントだけ狙う'],'判断のポイント: ボールカウントが有利なので、狙い球を絞って甘い球だけを強く打つ。'],
+['m18','守備','m',2,'一塁手が一塁線のゴロを捕球した。投手がベースカバーに入っている。正しい対応は?',['投手の足元に確実に送球する','一塁手が走ってタッチする','走者を無視して持っている','二塁へ送球する'],'ポイント: 投手はベースカバーに走りながら受ける。胸付近へ軽く確実にトスして、走者との衝突を避ける。'],
+['m19','状況判断','m',3,'無死一二塁。三塁手がバントを処理する。最優先は?',['打球の位置と走者を確認し、確実に1つアウトを取る','必ず三塁へ送球','必ず二塁へ送球','捕らずに見送る'],'判断のポイント: 無理な送球で走者を進めない。確実に1つアウトを取るのが基本。'],
+['m20','用語','m',2,'「犠牲フライ」とは?',['外野フライで走者が捕球後に得点すること','走者がいないときのフライ','三振のこと','盗塁成功のこと'],'ポイント: 外野フライで捕球後に走者が生還すると犠牲フライ。打者に打数は付かないが打点が付く。'],
+['m21','用語','m',3,'OPSとは?',['出塁率+長打率','打率+本塁打数','打点+得点','三振率+四球率'],'ポイント: OPSは「出塁率+長打率」。打者がどれだけ出塁し、どれだけ長打力があるかをまとめて見る指標。'],
+['m22','ルール','m',2,'タッチアップができる条件は?',['飛球が捕球された後、元の塁を踏んでから進塁できる','ゴロでも自由に進塁できる','捕球前に塁を離れてよい','盗塁のときだけ'],'ルール: 捕球より先に離塁するとアウト。捕球後に元の塁に触れてから次の塁を狙う。'],
+['m23','守備','m',3,'遊撃手が二遊間のゴロを逆シングルで捕球した。体勢が崩れている。判断は?',['送球できる体勢を作ってから、確実に一塁へ送る','必ず全力で一塁へ投げる','走者がいなくても捕らない','審判に確認する'],'判断のポイント: 無理な体勢で送球すると悪送球になりやすい。ステップを作り、確実に投げることを優先する。']];
+// ルビ辞書(読みが確実な語のみ。載っていない漢字は誤読を避けてルビなし)
+const DW=`投手|とうしゅ,捕手|ほしゅ,打者|だしゃ,走者|そうしゃ,内野|ないや,外野|がいや,盗塁|とうるい,審判|しんぱん,四球|しきゅう,三振|さんしん,満塁|まんるい,塁|るい,野球|やきゅう,今日|きょう,練習|れんしゅう,試合|しあい,守備|しゅび,走塁|そうるい,打撃|だげき,正解|せいかい,問題|もんだい,成長|せいちょう,苦手|にがて,記録|きろく,時間|じかん,目標|もくひょう,連続|れんぞく,解説|かいせつ,状況判断|じょうきょうはんだん,判断|はんだん,用語|ようご,正答率|せいとうりつ,攻守|こうしゅ,交代|こうたい,体|からだ,正面|しょうめん,低|ひく,一塁|いちるい,二塁|にるい,三塁|さんるい,本塁|ほんるい,見|み,通|とお,打|う,走|はし,投|な,回|かい,問|もん,日|にち,点|てん,次|つぎ,最近|さいきん,結果|けっか,終了|しゅうりょう,分|ふん,勝|か,負|ま,得意|とくい,日付|ひづけ,累計|るいけい,回答|かいとう,大丈夫|だいじょうぶ,今|いま,良|よ,出|だ,多|おお,右|みぎ,左|ひだり,両|りょう,取|と,前回|ぜんかい,振|ふ,返|かえ,家族|かぞく,保護者|ほごしゃ,兄|あに,始|はじ,選|えら,終|お,復習|ふくしゅう,必要|ひつよう,苦|にが,手|て,難|むずか,楽|たの,守|まも,練|れん,球|たま,戦|たたか,持|も,言|い,書|か,気|き,力|ちから,毎|まい,頑張|がんば,時|とき,間|あいだ,目|め,標|ひょう`.split(',').map(x=>x.split('|')).sort((a,b)=>b[0].length-a[0].length);
+const DM=Object.fromEntries(DW),DR=new RegExp(DW.map(x=>x[0]).join('|'),'g');
+function rub(root){const w=document.createTreeWalker(root,4),a=[];while(w.nextNode())a.push(w.currentNode);
+a.forEach(n=>{if(!n.nodeValue.trim()||/^(RT|TEXTAREA|SCRIPT|STYLE|OPTION)$/.test(n.parentNode.tagName))return;
+const t=n.nodeValue;if(!DR.test(t)){DR.lastIndex=0;return}DR.lastIndex=0;
+const s=document.createElement('span');s.innerHTML=esc(t).replace(DR,m=>`<ruby>${m}<rt>${DM[m]}</rt></ruby>`);n.replaceWith(s)})}
+let S;try{S=JSON.parse(localStorage.getItem('mb1'))}catch(e){}S=S||{log:[],notes:[],last:{},ruby:false};
+const save=()=>{try{localStorage.setItem('mb1',JSON.stringify(S))}catch(e){}};
+let U=null,view='home',tgt='mayo',qz=null,ntype='練習';
+const fam=()=>U=='parent'||U=='brother',ru=()=>U=='leo'||(fam()&&S.ruby),tg=()=>fam()?tgt:U,dstr=()=>new Date().toLocaleDateString('sv');
+function st(p){const L=S.log.filter(x=>x.p==p),n=L.length,ok=L.filter(x=>x.ok).length,c={};
+L.forEach(x=>{c[x.cat]=c[x.cat]||[0,0];c[x.cat][0]++;x.ok&&c[x.cat][1]++});
+const days=[...new Set(L.map(x=>x.d))],t=new Date();let s=0;
+for(let i=0;i<400;i++){const k=t.toLocaleDateString('sv');if(days.includes(k))s++;else if(!(s==0&&k==dstr()))break;t.setDate(t.getDate()-1)}
+let run=0,mx=0;L.forEach(x=>{run=x.ok?run+1:0;mx=Math.max(mx,run)});
+const r=Object.entries(c).filter(e=>e[1][0]>=3).map(e=>[e[0],e[1][1]/e[1][0]]).sort((a,b)=>a[1]-b[1]);
+const nt=S.notes.filter(x=>x.p==p),xp=L.reduce((a,x)=>a+(x.ok?10:3),0)+nt.length*5;
+return{L,n,ok,c,s,mx,nt,xp,rate:n?Math.round(ok/n*100):0,weak:r.length?r[0]:null,strong:r.length>1?r[r.length-1]:null}}
+function badges(p){const s=st(p);return[['はじめての回答','🌱',s.n>=1],['10問回答','🔟',s.n>=10],['5問連続正解','🔥',s.mx>=5],['3日連続','📅',s.s>=3],['守備5問正解','🧤',(s.c['守備']||[0,0])[1]>=5],['記録ノート','📝',s.nt.length>=1]]}
+function coach(p){const s=st(p),n=P[p].n,o=[];
+if(!s.n)return[`${n}、まずは野球IQチャレンジを5問やってみよう。記録がたまると、くわしいアドバイスができるよ。`];
+if(s.weak&&s.weak[1]<.8)o.push(`最近は「${s.weak[0]}」の正答率が${Math.round(s.weak[1]*100)}%。次のチャレンジでは「${s.weak[0]}」の問題を多めに出すよ。`);
+if(s.strong&&s.strong[1]>=.8)o.push(`「${s.strong[0]}」は正答率${Math.round(s.strong[1]*100)}%で得意になってきたね。`);
+if(s.s>=2)o.push(`${s.s}日連続でがんばれているね。`);
+const bad=[...new Set(s.L.filter(x=>!x.ok).map(x=>x.q))].filter(q=>{const h=s.L.filter(x=>x.q==q);return!h[h.length-1].ok});
+if(bad.length)o.push(`もう一度まちがえた問題が${bad.length}つあるよ。復習チャレンジで出すね。`);
+const l=s.nt[s.nt.length-1],ng=l&&l.f.find(f=>/できなかった|次回/.test(f[0])&&f[1]);
+if(ng)o.push(`前回のノートの「${ng[1]}」を、次の練習で意識してみよう。`);
+if(!s.nt.length)o.push('練習ノートも書いてみよう。記録があるほど、アドバイスが具体的になるよ。');
+if(s.n<10)o.push(`まだ${s.n}問の記録なので、くわしい分析は10問以上たまってからになるよ。`);
+return o}
+const coachH=p=>`<div class=c><h2>🧢 AIコーチ</h2>${coach(p).map(x=>`<p>${esc(x)}</p>`).join('')}<div class=m>※記録データにもとづく自動コメントです(外部AIは未接続)</div></div>`;
+function pickQ(){const g=P[qz.p].g,s=st(qz.p),pool=Q.filter(q=>q[2]==g&&!qz.used.includes(q[0]));
+const w=pool.map(q=>{const h=s.L.filter(x=>x.q==q[0]),l=h[h.length-1];let v=!l?2:l.ok?.3:3;if(s.weak&&s.weak[0]==q[1])v*=2;return v});
+let r=Math.random()*w.reduce((a,b)=>a+b,0),i=0;for(;i<w.length-1&&(r-=w[i])>0;i++);
+const q=pool[i];qz.cur=q;qz.ch=q[5].map((t,k)=>({t,c:!k})).sort(()=>Math.random()-.5);qz.used.push(q[0]);qz.sel=null;qz.t0=Date.now()}
+function startQ(){const p=tg(),g=P[p].g;qz={p,n:0,ok:0,used:[],tot:Math.min(5,Q.filter(q=>q[2]==g).length)};pickQ();go('quiz',1)}
+function ans(i){if(qz.sel!=null)return;qz.sel=i;const ok=qz.ch[i].c,q=qz.cur;
+S.log.push({p:qz.p,q:q[0],cat:q[1],lv:q[3],ok,d:dstr(),t:Date.now(),ms:Date.now()-qz.t0});ok&&qz.ok++;save();R()}
+function nxt(){qz.n++;if(qz.n<qz.tot)pickQ();R()}
+const go=(v,keep)=>{view=v;if(v!='quiz'||!keep)qz=v=='quiz'?qz:null;R();scrollTo(0,0)};
+function login(){return`<div class=hd><h1>M.<b>BASE BALL</b></h1></div><div class=c><h2>だれが使う?</h2><p class=m>野球IQを高めよう。考える力を育て、成長を記録する。</p>
+<button class=o onclick="lg('mayo')">⚾ まよ(中学1年)</button><button class=o onclick="lg('leo')">⚾ れお(小学3年)</button>
+<button class=o onclick="lg('parent')">👪 保護者</button><button class=o onclick="lg('brother')">🧑 兄・管理者</button>
+<p class=m>※試作版: パスワードなし。記録はこの端末のブラウザ内に保存されます。</p></div>`}
+function lg(r){U=r;view=fam()?'fam':'home';if(!fam()){S.last[r]=Date.now();save()}R()}
+function hd(){return`<div class=hd><h1>M.<b>BASE BALL</b></h1><div style="width:90px"><button class=m style="padding:4px" onclick="U=null;qz=null;R()">もどる</button></div></div>`}
+function stats(p){const s=st(p),l=s.xp%50;return`<div class=g><div class=s><b>Lv.${Math.floor(s.xp/50)+1}</b><span>XP ${s.xp}</span></div><div class=s><b>${s.s}日</b><span>連続日数</span></div><div class=s><b>${s.n}問</b><span>累計回答数</span></div><div class=s><b>${s.rate}%</b><span>正答率</span></div></div><div class=bar style="margin:8px 0 12px"><i style="width:${l*2}%"></i></div>`}
+function bdg(p){return`<div class=c><h2>🏅 バッジ</h2>${badges(p).map(b=>`<span class=chip style="${b[2]?'':'opacity:.35'}">${b[1]} ${b[0]}</span>`).join('')}</div>`}
+function catH(p){const s=st(p);return`<div class=c><h2>カテゴリ別の正答率</h2>${CATS.map(c=>{const v=s.c[c];return`<div class=m>${c} ${v?`${v[1]}/${v[0]}問`:'まだ記録なし'}</div><div class=bar style="margin-bottom:8px"><i style="width:${v?v[1]/v[0]*100:0}%"></i></div>`}).join('')}</div>`}
+function recent(p){const s=st(p),bad=[...new Set(s.L.filter(x=>!x.ok).map(x=>x.q))].filter(q=>{const h=s.L.filter(x=>x.q==q);return!h[h.length-1].ok});
+return`<div class=c><h2>最近の回答</h2>${s.L.slice(-12).map(x=>x.ok?'✅':'❌').join(' ')||'<span class=m>まだ記録なし</span>'}<p class=m>復習が必要な問題: ${bad.length}つ</p></div>`}
+function home(p){const s=st(p);return`<div class=c><h2>今日の野球IQチャレンジ</h2><p class=m>${p=='leo'?'まちがえても大丈夫。つぎにいかせばOK!':'実戦の状況判断を5問。苦手分野を多めに出題します。'}</p><button class=b onclick="startQ()">チャレンジを始める</button></div>${stats(p)}
+<div class=c><h2>苦手分野</h2>${s.weak?`${s.weak[0]}(正答率${Math.round(s.weak[1]*100)}%)`:'<span class=m>3問以上答えると分かります</span>'}</div>${coachH(p)}${bdg(p)}`}
+function quiz(){if(!qz)return`<div class=c><button class=b onclick=startQ()>チャレンジを始める</button></div>`;
+if(qz.n>=qz.tot)return`<div class=c><h2>クリア! 🎉</h2><p>${qz.tot}問中 ${qz.ok}問 正解</p><p class=m>獲得XP: +${qz.ok*10+(qz.tot-qz.ok)*3}</p><button class=b onclick=startQ()>もう一度</button><button class=o onclick="go('home')">ホームへ</button></div>`;
+const q=qz.cur,d=qz.sel!=null;return`<div class=c><div class=m>${qz.n+1}/${qz.tot} ・ ${q[1]} ・ ${'★'.repeat(q[3])}</div><h2 style="margin-top:6px">${esc(q[4])}</h2>
+${qz.ch.map((c,i)=>`<button class="o ${d?(c.c?'ok':i==qz.sel?'ng':''):''}" onclick="ans(${i})">${esc(c.t)}</button>`).join('')}
+${d?`<p><b>${qz.ch[qz.sel].c?'⭕ 正解!':'❌ 不正解'}</b></p><p>${esc(q[6])}</p><button class=b onclick=nxt()>${qz.n+1<qz.tot?'次の問題':'結果を見る'}</button>`:''}</div>`}
+const NF={leo:{'練習':[['練習内容','chips',['キャッチボール','ノック','バッティング','走る','素振り']],['時間','sel',['15分','30分','60分','90分']],['できたこと','txt'],['今日の気分','sel',['楽しかった','むずかしかった','もっとやりたい']]],
+'試合':[['結果','sel',['勝ち','負け','引き分け']],['ヒットの数','sel',['0','1','2','3以上']],['がんばったプレー','txt']]},
+mayo:{'練習':[['練習内容','txt'],['時間(分)','num'],['できたこと','txt'],['できなかったこと','txt'],['次回の目標','txt']],
+'試合':[['結果','sel',['勝ち','負け','引き分け']],['打席','sel',['右打席','左打席','両方']],['打撃成績','txt'],['守備でのプレー(ポジション)','txt'],['走塁での判断','txt'],['振り返り','txt']]}};
+function noteV(p){const f=NF[p][ntype];return`<div class=c><div class=w><button class="chip ${ntype=='練習'?'on':''}" onclick="ntype='練習';R()">練習ノート</button><button class="chip ${ntype=='試合'?'on':''}" onclick="ntype='試合';R()">試合ノート</button></div>
+${f.map((x,i)=>`<label>${x[0]}</label>`+(x[1]=='chips'?x[2].map(c=>`<label style="display:inline;margin-right:8px;color:var(--ink)"><input class=cb type=checkbox name=f${i} value="${c}">${c}</label>`).join(''):x[1]=='sel'?`<select id=f${i}>${x[2].map(c=>`<option>${c}</option>`).join('')}</select>`:x[1]=='num'?`<input id=f${i} type=number inputmode=numeric>`:`<textarea id=f${i} rows=2></textarea>`)).join('')}
+<button class=b onclick="saveN('${p}')">記録する(+5XP)</button></div>${notesH(p)}`}
+function saveN(p){const f=NF[p][ntype].map((x,i)=>[x[0],x[1]=='chips'?[...document.querySelectorAll(`[name=f${i}]:checked`)].map(e=>e.value).join('、'):document.getElementById('f'+i).value.trim()]);
+if(!f.some(x=>x[1]&&!['15分','勝ち','0','右打席','楽しかった'].includes(x[1])&&1)&&!f.some(x=>x[1])){alert('なにか入力してね');return}
+S.notes.push({p,type:ntype,d:dstr(),f});save();R()}
+const notesH=p=>`<div class=c><h2>これまでのノート</h2>${S.notes.filter(x=>x.p==p).slice(-8).reverse().map(n=>`<div style="border-top:1px solid var(--ln);padding:8px 0"><b>${n.d} ${n.type}</b>${n.f.filter(f=>f[1]).map(f=>`<div class=m>${esc(f[0])}: <span style="color:var(--ink)">${esc(f[1])}</span></div>`).join('')}</div>`).join('')||'<span class=m>まだノートがありません</span>'}</div>`;
+function famV(){const p=tgt,l=S.last[p];return`<div class=c><div class=w>${Object.keys(P).map(k=>`<button class="chip ${k==p?'on':''}" onclick="tgt='${k}';R()">${P[k].n}</button>`).join('')}</div>
+<label style="display:flex;gap:8px;align-items:center"><input class=cb type=checkbox ${S.ruby?'checked':''} onchange="S.ruby=this.checked;save();R()">ふりがなを表示</label>
+<p class=m>最終ログイン: ${l?new Date(l).toLocaleString('ja-JP'):'まだありません'} / 比較や順位付けはせず、それぞれの成長を見ます。</p></div>${stats(p)}${coachH(p)}${catH(p)}${recent(p)}${bdg(p)}${notesH(p)}`}
+function R(){const a=$('#app');let h;if(!U){h=login();$('#nv').style.display='none'}else{
+h=hd();const p=tg();h+=fam()?famV():view=='home'?home(p):view=='quiz'?quiz():view=='note'?noteV(p):`${stats(p)}${catH(p)}${recent(p)}${coachH(p)}`;
+const items=fam()?[]:[['home','🏠','ホーム'],['quiz','⚾','クイズ'],['note','📝','ノート'],['stats','📈','成長']];
+$('#nv').style.display=items.length?'block':'none';$('#nv').firstChild.innerHTML=items.map(i=>`<button class="${view==i[0]?'on':''}" onclick="go('${i[0]}',1)">${i[1]}<br>${i[2]}</button>`).join('')}
+a.innerHTML=h;a.classList.toggle('rb',!!U&&ru());if(U&&ru()){rub(a);rub($('#nv'))}}
+
+const sb=window.supabase?supabase.createClient('https://iysdrnyibnsskjfjwnuj.supabase.co','sb_publishable_V8H7y7gcaQwkD7mV1WaaBA_hzy3ATBk'):null;
+const err=m=>alert(m);
+function login(){return`<div class=hd><h1>M.<b>BASE BALL</b></h1></div><div class=c><h2>ログイン</h2><label>メールアドレス</label><input id=em type=email autocapitalize=none autocomplete=username><label>パスワード</label><input id=pw type=password autocomplete=current-password><button class=b onclick=doLogin()>ログイン</button><p class=m id=lm>${sb?'':'読み込みに失敗しました。通信を確認してね'}</p></div>`}
+async function doLogin(){const m=$('#lm');m.textContent='ログイン中…';const r=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(r.error){m.textContent='ログインできませんでした。メールとパスワードを確認してね';return}await boot()}
+async function boot(){if(!sb)return;const{data:{session}}=await sb.auth.getSession();if(!session){U=null;R();return}
+const pr=await sb.from('profiles').select('name,role').eq('id',session.user.id).maybeSingle();
+if(!pr.data){await sb.auth.signOut();U=null;R();err('このアカウントはまだ登録されていません');return}
+const[a,n]=await Promise.all([sb.from('answers').select('*').order('created_at'),sb.from('notes').select('*').order('created_at')]);
+if(a.error||n.error){err('記録の読み込みに失敗しました');return}
+S.log=a.data.map(x=>({p:x.player,q:x.q,cat:x.cat,lv:x.lv,ok:x.ok,d:x.d,t:Date.parse(x.created_at),ms:x.ms}));
+S.notes=n.data.map(x=>({p:x.player,type:x.type,d:x.d,f:x.f}));
+S.last={};S.log.forEach(x=>S.last[x.p]=x.t);
+const first=!U;U=pr.data.role;if(first)view=fam()?'fam':'home';R()}
+function hd(){return`<div class=hd><h1>M.<b>BASE BALL</b></h1><div style="width:90px"><button class=m style="padding:4px" onclick="out()">ログアウト</button></div></div>`}
+async function out(){await sb.auth.signOut();U=null;qz=null;S.log=[];S.notes=[];R()}
+function ans(i){if(qz.sel!=null)return;qz.sel=i;const ok=qz.ch[i].c,q=qz.cur,r={p:qz.p,q:q[0],cat:q[1],lv:q[3],ok,d:dstr(),t:Date.now(),ms:Date.now()-qz.t0};
+S.log.push(r);ok&&qz.ok++;R();sb.from('answers').insert({player:r.p,q:r.q,cat:r.cat,lv:r.lv,ok,d:r.d,ms:r.ms}).then(x=>{if(x.error)err('回答を保存できませんでした: '+x.error.message)})}
+function saveN(p){const f=NF[p][ntype].map((x,i)=>[x[0],x[1]=='chips'?[...document.querySelectorAll(`[name=f${i}]:checked`)].map(e=>e.value).join('、'):document.getElementById('f'+i).value.trim()]);
+if(!f.some(x=>x[1])){err('なにか入力してね');return}
+const n={p,type:ntype,d:dstr(),f};S.notes.push(n);R();sb.from('notes').insert({player:p,type:ntype,d:n.d,f}).then(x=>{if(x.error)err('ノートを保存できませんでした: '+x.error.message)})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&U&&!qz)boot()});
+R();boot();</script></body></html>
